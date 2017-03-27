@@ -9,8 +9,8 @@ TowerUniteOCRAuto is a program that will allow you to gamble automatically while
 
 Some characters in OCR are recognized as other characters. This is from Tesseract's training files so I'll have to get them figured out.
 
-### Z can look like a 2 | Also outputs "D2"
+Z can look like a 2 | Also outputs "D2"
 
-### Sometimes, some letters don't get pressed (they are, but aren't recognized | Unconfirmed if my last update fixed it)
+Sometimes, some letters don't get pressed (they are, but aren't recognized | Unconfirmed if my last update fixed it)
 
-### If you do get kicked, use lastSuccessfulBypassImageTaken.png to figure out what the actual key to press was, and then the last console entry on it to see what key was pressed.
+If you do get kicked, use lastSuccessfulBypassImageTaken.png to figure out what the actual key to press was, and then the last console entry on it to see what key was pressed.
