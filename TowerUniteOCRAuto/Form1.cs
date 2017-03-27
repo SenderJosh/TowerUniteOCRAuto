@@ -71,11 +71,11 @@ namespace TowerUniteOCRAuto
                 bool success = false;
                 StartedStoppedLabel.Text = "Started";
                 int delTime = 0, ranTime = 0;
-                if(Int32.TryParse(delayTimeTextBox.Text, out delTime) && Int32.TryParse(randomTimeTextBox.Text, out ranTime))
+                if (Int32.TryParse(delayTimeTextBox.Text, out delTime) && Int32.TryParse(randomTimeTextBox.Text, out ranTime))
                 {
-                    if(delTime > 0 && ranTime >= 0)
+                    if (delTime > 0 && ranTime >= 0)
                     {
-                        CallRunOCRAsync(7000);
+                        CallRunOCRAsync(3000);
                         CallRunAutoKeyPressAsync(Int32.Parse(delayTimeTextBox.Text), Int32.Parse(randomTimeTextBox.Text));
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.WriteLine("Starting auto...");
@@ -83,7 +83,7 @@ namespace TowerUniteOCRAuto
                         success = true;
                     }
                 }
-                if(!success)
+                if (!success)
                 {
                     MessageBox.Show("Only integer values are allowed in the time textboxes\nMake sure they are non-negative, and your delay must be a non-zero time.");
                 }
@@ -135,7 +135,7 @@ namespace TowerUniteOCRAuto
 
         private async void CallRunOCRAsync(int ms)
         {
-            if(await RunOCRAsync(ms)) //Returned true means something fucked up and was forcibly stopped
+            if (await RunOCRAsync(ms)) //Returned true means something fucked up and was forcibly stopped
             {
                 StartedStoppedLabel.Text = "Stopped";
             }
@@ -151,14 +151,20 @@ namespace TowerUniteOCRAuto
 
         private Boolean RunOCR(int ms)
         {
-            int lastTime = ms;
+            int lastTime = ms, iteratedImage = 0;
+            bool finFirstCheck = false;
             while (Form1.cont)
             {
                 Thread.Sleep(lastTime);
                 if (Form1.cont) //User may toggle here
                 {
                     Image img = Utilities.CaptureWindow(towerUniteHandle);
-                    //Image img = Image.FromFile("C:/Program Files (x86)/Steam/userdata/101136263/760/remote/394690/screenshots/press2.jpg");
+                    //Image img = Image.FromFile("C:/Program Files (x86)/Steam/userdata/101136263/760/remote/394690/screenshots/press2.jpg"); //Test Specific key press image
+                    if(finFirstCheck)
+                    {
+                        Console.WriteLine("DebugMode: Waited 15 minutes, saving iterated image");
+                        img.Save("iteratedImage" + ++iteratedImage);
+                    }
                     try
                     {
                         using (Bitmap bmp = new Bitmap(img))
@@ -191,13 +197,30 @@ namespace TowerUniteOCRAuto
 
                                             Console.WriteLine("Pressed L and I");
                                         }
-                                        else if(keyToPress.ToLower() == "2") //chances are, meant "Z"
+                                        else if (keyToPress.ToLower() == "2") //chances are, meant "Z" according to screenshots
                                         {
                                             PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.Z), IntPtr.Zero);
+
+                                            Console.WriteLine("Pressed 2");
                                         }
-                                        else if(keyToPress.ToLower() == "5") //chances are, meant "S"
+                                        else if (keyToPress.ToLower() == "5") //chances are, meant "S" according to screenshots
                                         {
                                             PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.S), IntPtr.Zero);
+
+                                            Console.WriteLine("Pressed S");
+                                        }
+                                        else if (keyToPress.ToLower() == "9") //chances are, meant "G" according to screenshots
+                                        {
+                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.G), IntPtr.Zero);
+
+                                            Console.WriteLine("Pressed G");
+                                        }
+                                        else if (keyToPress.ToLower() == "7")
+                                        {
+                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.T), IntPtr.Zero);
+
+                                            Console.WriteLine("Pressed T");
+                                            //NOTE: m doesn't get read for some reason (like, the whole thing doesn't read)
                                         }
                                         else
                                         {
@@ -207,60 +230,6 @@ namespace TowerUniteOCRAuto
                                             {
                                                 Enum.TryParse(keyToPress.ToUpper(), out key);
                                             }
-                                            else
-                                            {
-                                                switch (keyToPress)//really shouldn't ever be these keys
-                                                {
-                                                    case "1":
-                                                        key = Keys.D1;
-                                                        break;
-                                                    case "2":
-                                                        key = Keys.D2;
-                                                        break;
-                                                    case "3":
-                                                        key = Keys.D3;
-                                                        break;
-                                                    case "4":
-                                                        key = Keys.D4;
-                                                        break;
-                                                    case "5":
-                                                        key = Keys.D5;
-                                                        break;
-                                                    case "6":
-                                                        key = Keys.D6;
-                                                        break;
-                                                    case "7":
-                                                        key = Keys.D7;
-                                                        break;
-                                                    case "8":
-                                                        key = Keys.D8;
-                                                        break;
-                                                    case "9":
-                                                        key = Keys.D9;
-                                                        break;
-                                                    case "0":
-                                                        key = Keys.D0;
-                                                        break;
-                                                    case ",":
-                                                        key = Keys.Oemcomma;
-                                                        break;
-                                                    case ".":
-                                                        key = Keys.OemPeriod;
-                                                        break;
-                                                    case "/":
-                                                        key = Keys.OemBackslash;
-                                                        break;
-                                                    case "[":
-                                                        key = Keys.OemOpenBrackets;
-                                                        break;
-                                                    case "]":
-                                                        key = Keys.OemCloseBrackets;
-                                                        break;
-                                                    default:
-                                                        key = Keys.None;
-                                                        break;
-                                                }
-                                            }
 
                                             if (key == Keys.None)
                                             {
@@ -269,6 +238,7 @@ namespace TowerUniteOCRAuto
                                                 Console.WriteLine("Application stopped -- ERROR: Could not resolve key to press: " + keyToPress + " during OCR\nLet the dev know the key that failed\n\tSaved Failed Image as failedimage.png");
                                                 img.Save("failedimage.png");
                                                 img.Dispose();
+                                                api.Clear(); //new
                                                 return true;
                                             }
                                             else
@@ -288,7 +258,10 @@ namespace TowerUniteOCRAuto
                                 Console.ResetColor();
                                 Console.WriteLine("Bypassed an AFK check x" + ++timesBypassed);
                                 img.Save("lastSuccessfulBypassImageTaken.png");
-                                lastTime = 60 * 4 * 1000; //Wait at least 4 minutes because the next check won't happen until ~5-15min.
+                                api.Clear(); //new
+                                lastTime = (60 * 14 * 1000) - 500; //Wait 14 minutes because the next check won't happen until 15min. +-time for things. 
+                                //Should get the time before I run OCR and after OCR and run the difference to get exact 15 min.
+                                finFirstCheck = true;
                             }
                             else
                             {
@@ -297,9 +270,10 @@ namespace TowerUniteOCRAuto
                         }
                         img.Save("lastImageTaken.png");
                         img.Dispose();
+                        api.Clear(); //new
                         Form1.pressImageFound = false;
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine("EXCEPTION -- Saved as output.txt (not implemented yet) -- Stopping automated procedures");
@@ -307,6 +281,7 @@ namespace TowerUniteOCRAuto
                         Console.WriteLine("Error Message:\n" + ex.Message + "\n" + ex.ToString());
                         Console.ResetColor();
                         img.Dispose();
+                        api.Clear(); //new
                         return true;
                     }
                 }
@@ -322,7 +297,7 @@ namespace TowerUniteOCRAuto
             changed = true;
             label4.Focus();
         }
-        
+
         private void keybindTextBox_TextChanged(object sender, EventArgs e)
         {
             if (changed)
