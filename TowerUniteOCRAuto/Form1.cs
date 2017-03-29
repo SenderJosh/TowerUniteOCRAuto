@@ -101,7 +101,18 @@ namespace TowerUniteOCRAuto
         private void Form1_Load(object sender, EventArgs e)
         {
             api = OcrApi.Create();
+            string[] config = { "configs.cfg" };
             api.Init(Patagames.Ocr.Enums.Languages.English);
+            api.SetVariable("tessedit_char_whitelist", ("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").ToLower());
+            /*Image img = Image.FromFile(@"C:\Users\Joshua\Documents\Visual Studio 2015\Projects\TowerUniteOCRAuto\TowerUniteOCRAuto\bin\x86\Debug\failedImage.png");
+            Bitmap bitmap = (Bitmap)img;
+            Bitmap bm = new Bitmap(bitmap);
+            Console.WriteLine(api.GetTextFromImage(bm));
+            bm.Save("testtest1.png");
+
+            bm = GrayScale(bm);
+            Console.WriteLine(api.GetTextFromImage(bm));
+            bm.Save("testtest2.png");*/
         }
 
         ////////Key Press Here////////
@@ -167,7 +178,7 @@ namespace TowerUniteOCRAuto
                     }
                     try
                     {
-                        using (Bitmap bmp = new Bitmap(img))
+                        using (Bitmap bmp = GrayScale(new Bitmap(img)))
                         {
                             List<string> words = new List<string>(api.GetTextFromImage(bmp).Split(' '));
                             bool found = false;
@@ -308,6 +319,29 @@ namespace TowerUniteOCRAuto
             {
                 changed = false;
             }
+        }
+
+        /// <summary>
+        /// Credits to casperOne and raRaRa on Stackoverflow
+        /// 
+        /// GrayScale a bitmap. Helps with Tesseract's OCR, despite Tesseract internally grascaling the image, doing it externally to the image seems
+        /// to have improved the accuracy.
+        /// </summary>
+        /// <param name="Bmp"></param>
+        /// <returns>GrayScale Bitmap</returns>
+        private Bitmap GrayScale(Bitmap Bmp)
+        {
+            int rgb;
+            Color c;
+
+            for (int y = 0; y < Bmp.Height; y++)
+                for (int x = 0; x < Bmp.Width; x++)
+                {
+                    c = Bmp.GetPixel(x, y);
+                    rgb = (int)((c.R + c.G + c.B) / 3);
+                    Bmp.SetPixel(x, y, Color.FromArgb(rgb, rgb, rgb));
+                }
+            return Bmp;
         }
     }
 }
