@@ -104,13 +104,14 @@ namespace TowerUniteOCRAuto
             string[] config = { "configs.cfg" };
             api.Init(Patagames.Ocr.Enums.Languages.English);
             api.SetVariable("tessedit_char_whitelist", ("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").ToLower());
-            /*Image img = Image.FromFile(@"C:\Users\Joshua\Documents\Visual Studio 2015\Projects\TowerUniteOCRAuto\TowerUniteOCRAuto\bin\x86\Debug\failedImage.png");
+            /*Image img = Image.FromFile(@"C:\Users\Joshua\Documents\Visual Studio 2015\Projects\TowerUniteOCRAuto\TowerUniteOCRAuto\bin\x86\Debug\Collection of failed pictures\b.png");
             Bitmap bitmap = (Bitmap)img;
             Bitmap bm = new Bitmap(bitmap);
             Console.WriteLine(api.GetTextFromImage(bm));
             bm.Save("testtest1.png");
 
             bm = GrayScale(bm);
+            bm = AdjustContrast(bm, 100);
             Console.WriteLine(api.GetTextFromImage(bm));
             bm.Save("testtest2.png");*/
         }
@@ -173,12 +174,12 @@ namespace TowerUniteOCRAuto
                     //Image img = Image.FromFile("C:/Program Files (x86)/Steam/userdata/101136263/760/remote/394690/screenshots/press2.jpg"); //Test Specific key press image
                     if(finFirstCheck)
                     {
-                        Console.WriteLine("DebugMode: Waited 15 minutes, saving iterated image");
-                        img.Save("iteratedImage" + ++iteratedImage);
+                        //Console.WriteLine("DebugMode: Waited 15 minutes, saving iterated image");
+                        img.Save("iteratedImage" + ++iteratedImage + ".png");
                     }
                     try
                     {
-                        using (Bitmap bmp = GrayScale(new Bitmap(img)))
+                        using (Bitmap bmp = AdjustContrast(GrayScale(new Bitmap(img)), 100))
                         {
                             List<string> words = new List<string>(api.GetTextFromImage(bmp).Split(' '));
                             bool found = false;
@@ -190,48 +191,14 @@ namespace TowerUniteOCRAuto
                                     string keyToPress = words[i + 1];
                                     if (!string.IsNullOrEmpty(keyToPress) && keyToPress.Length == 1) //Didn't grab a null string and is larger not recognized as a word (def a char)
                                     {
-                                        if (keyToPress.ToLower() == "0" || keyToPress.ToLower() == "o") //wait at least 100ms between presses
+                                        if (keyToPress.ToLower() == "l" || keyToPress.ToLower() == "i")
                                         {
-                                            //press both 0 and o
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.O), IntPtr.Zero);
-                                            Thread.Sleep(100);
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.NumPad0), IntPtr.Zero);
-
-                                            Console.WriteLine("Pressed 0 and o");
-                                        }
-                                        else if (keyToPress.ToLower() == "1" || keyToPress.ToLower() == "l" || keyToPress.ToLower() == "i")
-                                        {
-                                            //press all of those
+                                            //press both of those
                                             PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.L), IntPtr.Zero);
                                             Thread.Sleep(100);
                                             PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.I), IntPtr.Zero);
 
                                             Console.WriteLine("Pressed L and I");
-                                        }
-                                        else if (keyToPress.ToLower() == "2") //chances are, meant "Z" according to screenshots
-                                        {
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.Z), IntPtr.Zero);
-
-                                            Console.WriteLine("Pressed 2");
-                                        }
-                                        else if (keyToPress.ToLower() == "5") //chances are, meant "S" according to screenshots
-                                        {
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.S), IntPtr.Zero);
-
-                                            Console.WriteLine("Pressed S");
-                                        }
-                                        else if (keyToPress.ToLower() == "9") //chances are, meant "G" according to screenshots
-                                        {
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.G), IntPtr.Zero);
-
-                                            Console.WriteLine("Pressed G");
-                                        }
-                                        else if (keyToPress.ToLower() == "7")
-                                        {
-                                            PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.T), IntPtr.Zero);
-
-                                            Console.WriteLine("Pressed T");
-                                            //NOTE: m doesn't get read for some reason (like, the whole thing doesn't read)
                                         }
                                         else
                                         {
@@ -260,6 +227,48 @@ namespace TowerUniteOCRAuto
                                         }
                                         found = true;
                                     }
+                                    else if(!string.IsNullOrEmpty(keyToPress) && keyToPress.Length == 3)
+                                    {
+                                        string keyToPressLower = keyToPress.ToLower();
+                                        if(keyToPressLower[1] == 't' && keyToPressLower[2] == 'o')
+                                        {
+                                            if (keyToPressLower[0] == 'l' || keyToPressLower[0] == 'i')
+                                            {
+                                                //press both of those
+                                                PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.L), IntPtr.Zero);
+                                                Thread.Sleep(100);
+                                                PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)(Keys.I), IntPtr.Zero);
+
+                                                Console.WriteLine("Pressed L and I");
+                                            }
+                                            else
+                                            {
+                                                //press just the key that it found
+                                                Keys key = Keys.None;
+                                                if (Regex.IsMatch(keyToPress, @"(?i)^[a-z ]+")) //Only letters
+                                                {
+                                                    Enum.TryParse(keyToPress.ToUpper(), out key);
+                                                }
+
+                                                if (key == Keys.None)
+                                                {
+                                                    Console.WriteLine("Could not find the key to press! Stopping automated procedures.");
+                                                    Form1.cont = false;
+                                                    Console.WriteLine("Application stopped -- ERROR: Could not resolve key to press: " + keyToPress + " during OCR\nLet the dev know the key that failed\n\tSaved Failed Image as failedimage.png");
+                                                    img.Save("failedimage.png");
+                                                    img.Dispose();
+                                                    api.Clear(); //new
+                                                    return true;
+                                                }
+                                                else
+                                                {
+                                                    PostMessage(towerUniteHandle, WM_KEYDOWN, (IntPtr)key, IntPtr.Zero);
+                                                    Console.WriteLine("Pressed " + key.ToString());
+                                                }
+                                            }
+                                            found = true;
+                                        }
+                                    }
                                 }
                             }
                             if (found)
@@ -270,7 +279,7 @@ namespace TowerUniteOCRAuto
                                 Console.WriteLine("Bypassed an AFK check x" + ++timesBypassed);
                                 img.Save("lastSuccessfulBypassImageTaken.png");
                                 api.Clear(); //new
-                                lastTime = (60 * 14 * 1000) - 500; //Wait 14 minutes because the next check won't happen until 15min. +-time for things. 
+                                lastTime = (60 * 15 * 1000) - (30 * 1000); //Wait 14.5 minutes because the next check won't happen until 15min. +-time for things. 
                                 //Should get the time before I run OCR and after OCR and run the difference to get exact 15 min.
                                 finFirstCheck = true;
                             }
@@ -343,5 +352,61 @@ namespace TowerUniteOCRAuto
                 }
             return Bmp;
         }
+
+        private Bitmap AdjustContrast(Bitmap Image, float Value)
+        {
+            Value = (100.0f + Value) / 100.0f;
+            Value *= Value;
+            Bitmap NewBitmap = (Bitmap)Image.Clone();
+            BitmapData data = NewBitmap.LockBits(
+                new Rectangle(0, 0, NewBitmap.Width, NewBitmap.Height),
+                ImageLockMode.ReadWrite,
+                NewBitmap.PixelFormat);
+            int Height = NewBitmap.Height;
+            int Width = NewBitmap.Width;
+
+            unsafe
+            {
+                for (int y = 0; y < Height; ++y)
+                {
+                    byte* row = (byte*)data.Scan0 + (y * data.Stride);
+                    int columnOffset = 0;
+                    for (int x = 0; x < Width; ++x)
+                    {
+                        byte B = row[columnOffset];
+                        byte G = row[columnOffset + 1];
+                        byte R = row[columnOffset + 2];
+
+                        float Red = R / 255.0f;
+                        float Green = G / 255.0f;
+                        float Blue = B / 255.0f;
+                        Red = (((Red - 0.5f) * Value) + 0.5f) * 255.0f;
+                        Green = (((Green - 0.5f) * Value) + 0.5f) * 255.0f;
+                        Blue = (((Blue - 0.5f) * Value) + 0.5f) * 255.0f;
+
+                        int iR = (int)Red;
+                        iR = iR > 255 ? 255 : iR;
+                        iR = iR < 0 ? 0 : iR;
+                        int iG = (int)Green;
+                        iG = iG > 255 ? 255 : iG;
+                        iG = iG < 0 ? 0 : iG;
+                        int iB = (int)Blue;
+                        iB = iB > 255 ? 255 : iB;
+                        iB = iB < 0 ? 0 : iB;
+
+                        row[columnOffset] = (byte)iB;
+                        row[columnOffset + 1] = (byte)iG;
+                        row[columnOffset + 2] = (byte)iR;
+
+                        columnOffset += 4;
+                    }
+                }
+            }
+
+            NewBitmap.UnlockBits(data);
+
+            return NewBitmap;
+        }
+
     }
 }
